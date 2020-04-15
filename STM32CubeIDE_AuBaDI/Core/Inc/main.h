@@ -66,11 +66,9 @@ void Error_Handler(void);
 #define PH0_OSC_IN_GPIO_Port GPIOH
 #define PH1_OSC_OUT_Pin GPIO_PIN_1
 #define PH1_OSC_OUT_GPIO_Port GPIOH
-#define butt_Pin GPIO_PIN_0
-#define butt_GPIO_Port GPIOA
-#define butt_EXTI_IRQn EXTI0_IRQn
 #define endstop_Pin GPIO_PIN_11
 #define endstop_GPIO_Port GPIOD
+#define endstop_EXTI_IRQn EXTI15_10_IRQn
 #define LD4_Pin GPIO_PIN_12
 #define LD4_GPIO_Port GPIOD
 #define LD3_Pin GPIO_PIN_13
