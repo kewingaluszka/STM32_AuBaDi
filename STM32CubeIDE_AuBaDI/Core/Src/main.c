@@ -43,16 +43,31 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+TIM_HandleTypeDef htim4;
 
 /* USER CODE BEGIN PV */
 volatile int flag_endofroad = 0;
 volatile int last_position = 0;
+volatile int step = 2;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_TIM4_Init(void);
 /* USER CODE BEGIN PFP */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+	if (htim == &htim4) {
+		HAL_GPIO_TogglePin(step_GPIO_Port, step_Pin);
+		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+		step--;
+		if (step == 0) {
+			HAL_TIM_Base_Stop_IT(&htim4);
+		}
+	}
+
+}
+
 void wake(int flag) {
 	if (flag == 1) {
 		HAL_GPIO_WritePin(slp_rst_GPIO_Port, slp_rst_Pin, 1);
@@ -64,34 +79,39 @@ void wake(int flag) {
 }
 
 void move(int direction, int steps) {
-
+	step = steps;
 	switch (direction) {
 	//move right
 	case 0:
 
 		HAL_GPIO_WritePin(dir_GPIO_Port, dir_Pin, 0);
 		HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, 0);
-		for (int i = 0; i < steps; i++) {
-			HAL_GPIO_WritePin(step_GPIO_Port, step_Pin, 0);
-			HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, 0);
-			HAL_Delay(2);
-			HAL_GPIO_WritePin(step_GPIO_Port, step_Pin, 1);
-			HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, 1);
-		}
+
+		HAL_TIM_Base_Start_IT(&htim4);
+		/*
+		 for (int i = 0; i < steps; i++) {
+		 HAL_GPIO_WritePin(step_GPIO_Port, step_Pin, 0);
+		 HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, 0);
+		 HAL_Delay(2);
+		 HAL_GPIO_WritePin(step_GPIO_Port, step_Pin, 1);
+		 HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, 1);
+		 }*/
 
 		break;
-//move left
+		//move left
 	case 1:
 
 		HAL_GPIO_WritePin(dir_GPIO_Port, dir_Pin, 1);
 		HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, 1);
-		for (int i = 0; i < steps; i++) {
-			HAL_GPIO_WritePin(step_GPIO_Port, step_Pin, 0);
-			HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, 0);
-			HAL_Delay(2);
-			HAL_GPIO_WritePin(step_GPIO_Port, step_Pin, 1);
-			HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, 1);
-		}
+
+		HAL_TIM_Base_Start_IT(&htim4);
+		/*for (int i = 0; i < steps; i++) {
+		 HAL_GPIO_WritePin(step_GPIO_Port, step_Pin, 0);
+		 HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, 0);
+		 HAL_Delay(2);
+		 HAL_GPIO_WritePin(step_GPIO_Port, step_Pin, 1);
+		 HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, 1);
+		 }*/
 
 		break;
 	}
@@ -136,6 +156,17 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		flag_endofroad = 0;
 }
 
+void mix(int number) {
+	wake(1);
+	for (int i = 0; i < number; i++) {
+		move(0, 30);
+		HAL_Delay(50);
+		move(1, 30);
+		HAL_Delay(50);
+	}
+	wake(0);
+}
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -171,22 +202,36 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  move_begin();
+	//move_begin();
+	move(1,5000);
 	while (1) {
-		setPosition(1);
-		HAL_Delay(1000);
-		setPosition(3);
-		HAL_Delay(1000);
-		setPosition(1);
-		HAL_Delay(1000);
-		setPosition(0);
-		HAL_Delay(1000);
+
+
+		/*for (int ii = 0; ii < 6; ii++) {
+			setPosition(ii);
+			printf("POZYCJA %d \r\n", ii);
+			if (ii != 0) {
+				mix(10);
+			}
+			HAL_Delay(2000);
+
+		}
+			setPosition(1);
+		 HAL_Delay(1000);
+		 setPosition(3);
+		 HAL_Delay(1000);
+		 setPosition(1);
+		 HAL_Delay(1000);
+		 setPosition(0);
+		 HAL_Delay(1000);*/
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -235,6 +280,51 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief TIM4 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM4_Init(void)
+{
+
+  /* USER CODE BEGIN TIM4_Init 0 */
+
+  /* USER CODE END TIM4_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM4_Init 1 */
+
+  /* USER CODE END TIM4_Init 1 */
+  htim4.Instance = TIM4;
+  htim4.Init.Prescaler = TIM4_PRESCALER;
+  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim4.Init.Period = TIM4_PERIOD;
+  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM4_Init 2 */
+
+  /* USER CODE END TIM4_Init 2 */
+
 }
 
 /**
