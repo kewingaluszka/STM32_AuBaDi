@@ -47,6 +47,7 @@ TIM_HandleTypeDef htim4;
 
 /* USER CODE BEGIN PV */
 volatile int flag_endofroad = 0;
+volatile int flag_busy = 0;
 volatile int last_position = 0;
 volatile int step = 2;
 /* USER CODE END PV */
@@ -61,8 +62,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		HAL_GPIO_TogglePin(step_GPIO_Port, step_Pin);
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 		step--;
+		flag_busy = 1;
 		if (step == 0) {
 			HAL_TIM_Base_Stop_IT(&htim4);
+			flag_busy = 0;
 		}
 	}
 
@@ -88,14 +91,6 @@ void move(int direction, int steps) {
 		HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, 0);
 
 		HAL_TIM_Base_Start_IT(&htim4);
-		/*
-		 for (int i = 0; i < steps; i++) {
-		 HAL_GPIO_WritePin(step_GPIO_Port, step_Pin, 0);
-		 HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, 0);
-		 HAL_Delay(2);
-		 HAL_GPIO_WritePin(step_GPIO_Port, step_Pin, 1);
-		 HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, 1);
-		 }*/
 
 		break;
 		//move left
@@ -105,13 +100,6 @@ void move(int direction, int steps) {
 		HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, 1);
 
 		HAL_TIM_Base_Start_IT(&htim4);
-		/*for (int i = 0; i < steps; i++) {
-		 HAL_GPIO_WritePin(step_GPIO_Port, step_Pin, 0);
-		 HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, 0);
-		 HAL_Delay(2);
-		 HAL_GPIO_WritePin(step_GPIO_Port, step_Pin, 1);
-		 HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, 1);
-		 }*/
 
 		break;
 	}
@@ -130,7 +118,7 @@ void move_begin() {
 void setPosition(int position) {
 	int target;
 	flag_endofroad = 0;
-	wake(1);
+
 	if (position == 0) {
 		if (last_position != 0) {
 			move_begin();
@@ -146,7 +134,7 @@ void setPosition(int position) {
 		}
 	}
 	last_position = position;
-	wake(0);
+
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
@@ -209,29 +197,23 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-	//move_begin();
-	move(1,5000);
+	move_begin();
+	wake(1);
+	//setPosition(3);
+
+	//move(1,1000);
+	//move(0,1000);
+
+int i= 0;
 	while (1) {
-
-
-		/*for (int ii = 0; ii < 6; ii++) {
-			setPosition(ii);
-			printf("POZYCJA %d \r\n", ii);
-			if (ii != 0) {
-				mix(10);
-			}
-			HAL_Delay(2000);
+		while(flag_busy != 0){
 
 		}
-			setPosition(1);
-		 HAL_Delay(1000);
-		 setPosition(3);
-		 HAL_Delay(1000);
-		 setPosition(1);
-		 HAL_Delay(1000);
-		 setPosition(0);
-		 HAL_Delay(1000);*/
+		setPosition(i++);
 
+		if (i==5){
+			i=0;
+		}
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -353,7 +335,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : endstop_Pin */
   GPIO_InitStruct.Pin = endstop_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(endstop_GPIO_Port, &GPIO_InitStruct);
 
