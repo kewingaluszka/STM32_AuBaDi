@@ -34,7 +34,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define STEPS 985
+#define STEPS 1970
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -199,21 +199,15 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 	move_begin();
 	wake(1);
-	//setPosition(3);
+	setPosition(3);
+
 
 	//move(1,1000);
 	//move(0,1000);
 
-int i= 0;
+
 	while (1) {
-		while(flag_busy != 0){
 
-		}
-		setPosition(i++);
-
-		if (i==5){
-			i=0;
-		}
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -321,8 +315,13 @@ static void MX_GPIO_Init(void)
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
+  __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOE, Pump_relay_1_Pin|Pump_relay_2_Pin|Pump_relay_3_Pin|Pump_relay_4_Pin 
+                          |Pump_relay_5_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, LD4_Pin|LD3_Pin|LD5_Pin|LD6_Pin, GPIO_PIN_RESET);
@@ -332,6 +331,15 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(slp_rst_GPIO_Port, slp_rst_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : Pump_relay_1_Pin Pump_relay_2_Pin Pump_relay_3_Pin Pump_relay_4_Pin 
+                           Pump_relay_5_Pin */
+  GPIO_InitStruct.Pin = Pump_relay_1_Pin|Pump_relay_2_Pin|Pump_relay_3_Pin|Pump_relay_4_Pin 
+                          |Pump_relay_5_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pin : endstop_Pin */
   GPIO_InitStruct.Pin = endstop_Pin;
